@@ -53,17 +53,24 @@ def extract_client_auth(request):
     return (client_id, client_secret)
 
 
-def protected_resource_view(scopes=None):
+def protected_resource_view(scopes=None, unprotected_methods=None):
     """
     View decorator. The client accesses protected resources by presenting the
     access token to the resource server.
     https://tools.ietf.org/html/rfc6749#section-7
+    :param unprotected_methods: optional iterable of http methods that are not
+    checked for access token.
     """
     if scopes is None:
         scopes = []
+    if unprotected_methods is None:
+        unprotected_methods = []
 
     def wrapper(view):
         def view_wrapper(request,  *args, **kwargs):
+            if request.method in unprotected_methods:
+                return view(request, *args, **kwargs)
+
             access_token = extract_access_token(request)
 
             try:
